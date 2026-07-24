@@ -1,0 +1,62 @@
+name: Verify AE container
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_digest:
+        description: "Anonymized GHCR image digest (sha256:...)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Record host resources
+        run: |
+          lscpu
+          free -h
+          df -h .
+
+      - name: Pull immutable image
+        env:
+          IMAGE: ghcr.io/forzacapybara/ldp-gem5-ae@${{ inputs.image_digest }}
+        run: |
+          docker pull "$IMAGE"
+
+      - name: Reproduce eight tasks
+        env:
+          IMAGE: ghcr.io/forzacapybara/ldp-gem5-ae@${{ inputs.image_digest }}
+        run: |
+          mkdir results
+          chmod 777 results
+          /usr/bin/time -v docker run --rm \
+            -v "$PWD/results:/results" \
+            "$IMAGE" \
+            python3 scripts/run.py \
+              --gem5 /opt/ldp/bin/gem5.opt \
+              --checkpoint-root /opt/ldp/checkpoints \
+              --outdir /results --jobs 4
+
+      - name: Validate results
+        env:
+          IMAGE: ghcr.io/forzacapybara/ldp-gem5-ae@${{ inputs.image_digest }}
+        run: |
+          docker run --rm \
+            -v "$PWD/results:/results:ro" \
+            "$IMAGE" \
+            python3 scripts/validate.py \
+              --actual /results/analysis/speedup.csv \
+              --output-root /results
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: clean-container-results
+          path: results
+          retention-days: 30

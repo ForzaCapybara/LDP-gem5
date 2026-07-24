@@ -1,0 +1,59 @@
+name: Publish AE container
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      checkpoint_url:
+        description: "Public URL of checkpoints.tar.zst"
+        required: true
+        type: string
+      checkpoint_sha256:
+        description: "SHA-256 of checkpoints.tar.zst"
+        required: true
+        type: string
+      image_tag:
+        description: "Immutable image tag"
+        required: true
+        default: "micro26-ae-v1"
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download checkpoint bundle
+        env:
+          CHECKPOINT_URL: ${{ github.event_name == 'release' && format('{0}/releases/download/{1}/checkpoints.tar.zst', github.event.repository.html_url, github.event.release.tag_name) || inputs.checkpoint_url }}
+          CHECKPOINT_SHA256: ${{ github.event_name == 'release' && 'ba06d63d5a24d93a8e0da1c77b6650784442d0afda9af7b837d60fb56db2c3b4' || inputs.checkpoint_sha256 }}
+        run: |
+          curl --fail --location "$CHECKPOINT_URL" --output checkpoints.tar.zst
+          echo "$CHECKPOINT_SHA256  checkpoints.tar.zst" | sha256sum --check -
+          tar --use-compress-program=unzstd -xf checkpoints.tar.zst
+          test -f checkpoints/graph_bfs_queue_ss/cpt.*/m5.cpt
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: ghcr.io/forzacapybara/ldp-gem5-ae:${{ github.event_name == 'release' && github.event.release.tag_name || inputs.image_tag }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
