@@ -38,21 +38,20 @@ host itself should be x86-64 Linux. Docker Engine is the only host dependency
 for the recommended path.
 
 The compressed image layers total approximately 845 MB. A clean public-image
-run completed all eight tasks in 12 minutes 23 seconds on a GitHub-hosted
+run completed all eight tasks in 12 minutes 18 seconds on a GitHub-hosted
 Ubuntu 24.04 runner with 4 vCPUs and 15 GB RAM. Four CPU cores are sufficient;
 additional cores only increase the number of simulations that can run
 concurrently.
 
 ## 4. Docker workflow
 
-Pull the immutable release tag:
+Pull the evaluated image by its immutable digest:
 
 ```bash
-docker pull ghcr.io/forzacapybara/ldp-gem5-ae:micro26-ae-v1
+docker pull ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be
 ```
 
-The immutable digest will be recorded after the anonymized image is built and
-validated.
+The human-readable release tag is `micro26-ae-v1`.
 
 Run a single task as a functional check:
 
@@ -60,7 +59,7 @@ Run a single task as a functional check:
 mkdir -p results
 docker run --rm \
   -v "$PWD/results:/results" \
-  ghcr.io/forzacapybara/ldp-gem5-ae:micro26-ae-v1 \
+  ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be \
   python3 scripts/run.py \
     --gem5 /opt/ldp/bin/gem5.opt \
     --checkpoint-root /opt/ldp/checkpoints \
@@ -75,7 +74,7 @@ rm -rf results
 mkdir results
 docker run --rm \
   -v "$PWD/results:/results" \
-  ghcr.io/forzacapybara/ldp-gem5-ae:micro26-ae-v1 \
+  ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be \
   python3 scripts/run.py \
     --gem5 /opt/ldp/bin/gem5.opt \
     --checkpoint-root /opt/ldp/checkpoints \
@@ -87,7 +86,7 @@ Validate the complete result:
 ```bash
 docker run --rm \
   -v "$PWD/results:/results" \
-  ghcr.io/forzacapybara/ldp-gem5-ae:micro26-ae-v1 \
+  ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be \
   python3 scripts/validate.py \
     --actual /results/analysis/speedup.csv \
     --output-root /results

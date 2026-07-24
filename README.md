@@ -33,7 +33,7 @@ checkpoints:
 mkdir -p results
 docker run --rm \
   -v "$PWD/results:/results" \
-  ghcr.io/forzacapybara/ldp-gem5-ae:micro26-ae-v1 \
+  ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be \
   python3 scripts/run.py \
     --gem5 /opt/ldp/bin/gem5.opt \
     --checkpoint-root /opt/ldp/checkpoints \
@@ -45,7 +45,7 @@ Validate the reproduced results:
 ```bash
 docker run --rm \
   -v "$PWD/results:/results" \
-  ghcr.io/forzacapybara/ldp-gem5-ae:micro26-ae-v1 \
+  ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be \
   python3 scripts/validate.py --actual /results/analysis/speedup.csv \
     --output-root /results
 ```
@@ -53,8 +53,8 @@ docker run --rm \
 The permanent archival DOI is reserved and will become publicly accessible
 by the end of the artifact evaluation process.
 
-The immutable digest will be recorded after the anonymized image is built and
-validated.
+Evaluated image digest:
+`sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be`.
 
 ## Native build
 
