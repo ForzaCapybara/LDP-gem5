@@ -56,7 +56,7 @@ CONFIG = ROOT / "configs" / "ldp" / "se.py"
 LDP_CONFIG_ARGS = {
     "ldp_restored": [],
     "ldp_no_loop_restored": [
-        "--ldp-link-detection-enable",
+        "--ldp-offsetfilter-enable",
         "false",
     ],
 }

@@ -123,6 +123,10 @@ def task_metrics(
         late = stats[PREFETCHER + "pfLate"]
 
         coverage_standard = ratio(useful, useful + misses)
+        coverage_effective = ratio(
+            useful + hits,
+            useful + hits + misses,
+        )
         coverage_miss_reduction = (
             1.0 - ratio(misses, nopf_misses)
             if nopf_misses is not None
@@ -136,11 +140,11 @@ def task_metrics(
             if useful + hits_alloc > 0
             else 0.0
         )
-        coverage = (
-            coverage_standard
-            if coverage_choice == "standard"
-            else coverage_miss_reduction
-        )
+        coverage = {
+            "effective": coverage_effective,
+            "standard": coverage_standard,
+            "miss-reduction": coverage_miss_reduction,
+        }[coverage_choice]
         timeliness = (
             timeliness_strict
             if timeliness_choice == "strict"
@@ -178,6 +182,7 @@ def task_metrics(
             row.update(
                 {
                     "coverage_standard": f"{coverage_standard:.9f}",
+                    "coverage_effective": f"{coverage_effective:.9f}",
                     "coverage_miss_reduction": (
                         f"{coverage_miss_reduction:.9f}"
                     ),
@@ -282,8 +287,8 @@ def main() -> int:
     parser.add_argument("--tasks", nargs="+", required=True)
     parser.add_argument(
         "--coverage",
-        choices=("standard", "miss-reduction"),
-        default="standard",
+        choices=("effective", "standard", "miss-reduction"),
+        default="effective",
     )
     parser.add_argument(
         "--timeliness",
