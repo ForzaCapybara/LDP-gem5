@@ -165,7 +165,59 @@ S_i =
 The reported overall speedup is the geometric mean of the eight task
 speedups. It is not the 13-application 1.97x result reported in the paper.
 
-## 7. Customization
+## 7. Loop-decoupling mechanism ablation
+
+The optional mechanism experiment retains the no-prefetch and full-LDP
+configurations above and adds `ldp_no_loop_restored`. This third configuration
+changes only `--ldp-link-detection-enable` from `true` to `false`; the
+checkpoint, CPU, cache hierarchy, other LDP controls, and instruction window
+remain unchanged.
+
+Run all three configurations:
+
+```bash
+rm -rf results
+mkdir results
+docker run --rm \
+  --user "$(id -u):$(id -g)" -e HOME=/tmp \
+  -v "$PWD/results:/results" \
+  ghcr.io/forzacapybara/ldp-gem5-ae:micro26-ae-v2 \
+  python3 scripts/run.py \
+    --gem5 /opt/ldp/bin/gem5.opt \
+    --checkpoint-root /opt/ldp/checkpoints \
+    --outdir /results --jobs 4 --mechanism-ablation
+python3 scripts/validate_mechanism.py \
+  --actual results/analysis/mechanism_summary.csv
+```
+
+The clean reference run takes about 18 minutes on a four-vCPU GitHub-hosted
+runner. It generates task-level raw counters in `mechanism.csv`,
+application-level values in `mechanism_summary.csv`, and the three-panel
+`mechanism.svg`.
+
+For each configuration, coverage and timeliness are fixed as:
+
+\[
+\mathrm{Coverage} =
+\frac{\mathrm{pfUseful}}
+     {\mathrm{pfUseful}+\mathrm{demandMshrMisses}},
+\qquad
+\mathrm{Timeliness} =
+\frac{\mathrm{pfUseful}}
+     {\mathrm{pfUseful}+\mathrm{demandMshrHitsAtPf}}.
+\]
+
+A zero timeliness denominator means that the configuration produced no demand
+access affected by a prefetch and is reported as zero. Speedup remains
+`simSeconds(noPF) / simSeconds(variant)`. The raw gem5 stats are retained so
+reviewers can audit every derived value.
+
+Across the eight tasks, enabling loop decoupling increases mean coverage from
+12.7% to 49.1%, mean timeliness from 32.7% to 70.9%, and task-weighted
+geometric-mean speedup from 1.087x to 2.254x. BFS, MST, SSSP, and HJ-P show
+the same direction; GB is unchanged in this compact interval.
+
+## 8. Customization
 
 `scripts/run.py --help` lists the supported controls. Reviewers may select
 tasks, change parallelism, use another output root, or use the alternative
@@ -173,7 +225,7 @@ tasks, change parallelism, use another output root, or use the alternative
 limits are exploratory and should not be compared against the archived
 reference CSV.
 
-## 8. Troubleshooting
+## 9. Troubleshooting
 
 - `gem5 binary not found`: use the Docker image or complete the native build.
 - `Missing checkpoint(s)`: verify that `--checkpoint-root` contains one

@@ -14,6 +14,8 @@ from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from pathlib import Path
 
 from mechanism import collect as collect_mechanism
+from plot_mechanism import load as load_mechanism_summary
+from plot_mechanism import render as render_mechanism_figure
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -514,9 +516,15 @@ def main() -> int:
         mechanism_result, mechanism_failures = collect_mechanism(
             output_root,
             selected,
-            include_candidates=True,
         )
         print(f"mechanism results: {mechanism_result}")
+        mechanism_summary = mechanism_result.parent / "mechanism_summary.csv"
+        mechanism_figure = mechanism_result.parent / "mechanism.svg"
+        mechanism_figure.write_text(
+            render_mechanism_figure(load_mechanism_summary(mechanism_summary)),
+            encoding="utf-8",
+        )
+        print(f"mechanism figure: {mechanism_figure}")
     missing = [
         task
         for task in selected

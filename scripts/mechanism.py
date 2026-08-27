@@ -128,8 +128,14 @@ def task_metrics(
             if nopf_misses is not None
             else math.nan
         )
-        timeliness_strict = ratio(useful, useful + hits)
-        timeliness_all_targets = ratio(useful, useful + hits_alloc)
+        timeliness_strict = (
+            ratio(useful, useful + hits) if useful + hits > 0 else 0.0
+        )
+        timeliness_all_targets = (
+            ratio(useful, useful + hits_alloc)
+            if useful + hits_alloc > 0
+            else 0.0
+        )
         coverage = (
             coverage_standard
             if coverage_choice == "standard"

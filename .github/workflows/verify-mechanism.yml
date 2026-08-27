@@ -34,6 +34,7 @@ jobs:
             -v "$PWD/results:/results" \
             -v "$PWD/scripts/run.py:/opt/ldp/scripts/run.py:ro" \
             -v "$PWD/scripts/mechanism.py:/opt/ldp/scripts/mechanism.py:ro" \
+            -v "$PWD/scripts/plot_mechanism.py:/opt/ldp/scripts/plot_mechanism.py:ro" \
             "$IMAGE" \
             python3 scripts/run.py \
               --gem5 /opt/ldp/bin/gem5.opt \
@@ -51,6 +52,11 @@ jobs:
             python3 scripts/validate.py \
               --actual /results/analysis/speedup.csv \
               --output-root /results
+
+      - name: Validate mechanism results
+        run: |
+          python3 scripts/validate_mechanism.py \
+            --actual results/analysis/mechanism_summary.csv
 
       - uses: actions/upload-artifact@v4
         if: always()

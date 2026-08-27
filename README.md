@@ -57,6 +57,28 @@ by the invoking host user. If the host does not provide `id` (for example,
 Windows PowerShell), use a Docker Desktop shared directory and make `results`
 writable before launching the container; see `ARTIFACT.md`.
 
+## Loop-decoupling mechanism ablation
+
+The optional mechanism workflow compares full LDP with the same prefetcher
+after disabling only loop decoupling:
+
+```bash
+docker run --rm \
+  --user "$(id -u):$(id -g)" -e HOME=/tmp \
+  -v "$PWD/results:/results" \
+  ghcr.io/forzacapybara/ldp-gem5-ae:micro26-ae-v2 \
+  python3 scripts/run.py \
+    --gem5 /opt/ldp/bin/gem5.opt \
+    --checkpoint-root /opt/ldp/checkpoints \
+    --outdir /results --jobs 4 --mechanism-ablation
+```
+
+It writes `mechanism.csv`, `mechanism_summary.csv`, and `mechanism.svg` under
+`results/analysis`. Coverage is useful prefetches divided by useful
+prefetches plus demand MSHR misses. Timeliness is useful prefetches divided by
+useful prefetches plus demands that reach an outstanding prefetch MSHR; a
+zero denominator is reported as zero. See `ARTIFACT.md` for interpretation.
+
 The permanent archival DOI is reserved and will become publicly accessible
 by the end of the artifact evaluation process.
 

@@ -1,0 +1,14 @@
+ARG BASE_IMAGE=ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be
+FROM ${BASE_IMAGE}
+
+USER root
+COPY scripts /opt/ldp/scripts
+COPY expected /opt/ldp/expected
+COPY ARTIFACT.md /opt/ldp/ARTIFACT.md
+RUN chmod -R a-w /opt/ldp/expected
+USER ldp
+
+LABEL org.opencontainers.image.title="LDP-gem5 MICRO 2026 AE Artifact" \
+      org.opencontainers.image.source="https://github.com/ForzaCapybara/LDP-gem5" \
+      org.opencontainers.image.licenses="BSD-3-Clause" \
+      org.opencontainers.image.version="micro26-ae-v2"

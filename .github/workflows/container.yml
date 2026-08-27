@@ -18,6 +18,11 @@ on:
         required: true
         default: "micro26-ae-v1"
         type: string
+      dockerfile:
+        description: "Dockerfile used for the published image"
+        required: true
+        default: "Dockerfile.update"
+        type: string
 
 permissions:
   contents: read
@@ -50,6 +55,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
+          file: ${{ github.event_name == 'release' && 'Dockerfile.update' || inputs.dockerfile }}
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
