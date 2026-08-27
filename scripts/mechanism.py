@@ -208,7 +208,7 @@ def task_metrics(
 def collect(
     root: Path,
     task_names: list[str],
-    coverage_choice: str = "standard",
+    coverage_choice: str = "effective",
     timeliness_choice: str = "strict",
     include_candidates: bool = False,
 ) -> tuple[Path, list[str]]:
