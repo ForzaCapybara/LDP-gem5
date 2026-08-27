@@ -122,12 +122,11 @@ def render(values: dict[tuple[str, str], float]) -> str:
                 )
             parts.append(
                 text(
-                    center + 2,
+                    center,
                     y0 + 18,
                     label,
                     font_size=12,
-                    text_anchor="end",
-                    transform=f"rotate(-90 {center + 2:.1f} {y0 + 18:.1f})",
+                    text_anchor="middle",
                 )
             )
     parts.append("</svg>")

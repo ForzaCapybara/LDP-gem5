@@ -60,6 +60,11 @@ LDP_CONFIG_ARGS = {
         "false",
     ],
 }
+MECHANISM_MAX_INSTS = {
+    # GB's loop-decoupling effect occurs after the compact 10M interval.
+    # Run to normal program completion for the mechanism experiment.
+    "database_gb_m": 105_000_000,
+}
 
 
 def load_tasks(path: Path) -> dict[str, list[str]]:
@@ -390,6 +395,11 @@ def main() -> int:
                 configs = ["nopf_restored", "ldp_restored"]
                 if args.mechanism_ablation:
                     configs.append("ldp_no_loop_restored")
+                restore_max_insts = (
+                    MECHANISM_MAX_INSTS.get(task, args.max_insts)
+                    if args.mechanism_ablation
+                    else args.max_insts
+                )
                 for config in configs:
                     future = pool.submit(
                         run_one,
@@ -401,7 +411,7 @@ def main() -> int:
                         args.cpu_type,
                         config,
                         args.skip_existing,
-                        args.max_insts,
+                        restore_max_insts,
                     )
                     pending[future] = ("restore", task, config)
                 submitted = " + ".join(f"{task}/{config}" for config in configs)

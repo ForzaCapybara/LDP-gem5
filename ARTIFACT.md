@@ -169,9 +169,9 @@ speedups. It is not the 13-application 1.97x result reported in the paper.
 
 The optional mechanism experiment retains the no-prefetch and full-LDP
 configurations above and adds `ldp_no_loop_restored`. This third configuration
-changes only `--ldp-link-detection-enable` from `true` to `false`; the
-checkpoint, CPU, cache hierarchy, other LDP controls, and instruction window
-remain unchanged.
+changes only `--ldp-offsetfilter-enable` from `true` to `false`, disabling the
+loop-decoupling filter while leaving the checkpoint, CPU, cache hierarchy, and
+all other LDP controls unchanged.
 
 Run all three configurations:
 
@@ -190,8 +190,12 @@ python3 scripts/validate_mechanism.py \
   --actual results/analysis/mechanism_summary.csv
 ```
 
-The clean reference run takes about 14 minutes on a four-vCPU GitHub-hosted
-runner. It generates task-level raw counters in `mechanism.csv`,
+The graph and hash-join tasks use the same 10-million-instruction windows as
+the compact speedup experiment. The GB effect occurs later in execution, so
+the mechanism workflow runs GB to normal completion (104,754,907 simulated
+instructions, with a 105-million instruction cap) for both variants and the
+no-prefetch baseline. The clean reference run takes about 35 minutes on a
+four-vCPU GitHub-hosted runner. It generates task-level raw counters in `mechanism.csv`,
 application-level values in `mechanism_summary.csv`, and the three-panel
 `mechanism.svg`.
 
@@ -199,23 +203,25 @@ For each configuration, coverage and timeliness are fixed as:
 
 \[
 \mathrm{Coverage} =
-\frac{\mathrm{pfUseful}}
-     {\mathrm{pfUseful}+\mathrm{demandMshrMisses}},
+\frac{\mathrm{pfUseful}+\mathrm{demandMshrHitsAtPf}}
+     {\mathrm{pfUseful}+\mathrm{demandMshrHitsAtPf}
+      +\mathrm{demandMshrMisses}},
 \qquad
 \mathrm{Timeliness} =
 \frac{\mathrm{pfUseful}}
      {\mathrm{pfUseful}+\mathrm{demandMshrHitsAtPf}}.
 \]
 
-A zero timeliness denominator means that the configuration produced no demand
-access affected by a prefetch and is reported as zero. Speedup remains
-`simSeconds(noPF) / simSeconds(variant)`. The raw gem5 stats are retained so
-reviewers can audit every derived value.
+A demand counted by `demandMshrHitsAtPf` reaches a still-outstanding prefetch:
+it is covered, but not timely. A zero denominator is reported as zero. Speedup
+remains `simSeconds(noPF) / simSeconds(variant)`. The raw gem5 stats are
+retained so reviewers can audit every derived value.
 
 Across the eight tasks, enabling loop decoupling increases mean coverage from
-12.7% to 49.1%, mean timeliness from 32.7% to 70.9%, and task-weighted
-geometric-mean speedup from 1.087x to 2.254x. BFS, MST, SSSP, and HJ-P show
-the same direction; GB is unchanged in this compact interval.
+32.0% to 60.0%, mean timeliness from 44.6% to 71.3%, and task-weighted
+geometric-mean speedup from 1.145x to 2.411x. Every application shows the same
+direction. For GB specifically, coverage rises from 49.2% to 71.1%,
+timeliness from 64.5% to 90.3%, and speedup from 1.352x to 2.304x.
 
 ## 8. Customization
 

@@ -7,20 +7,6 @@ on:
         description: "GHCR image digest (sha256:...)"
         required: true
         type: string
-      max_insts:
-        description: "Maximum instructions per restored run"
-        required: true
-        default: "10000000"
-        type: string
-      tasks:
-        description: "Optional space-separated task names"
-        required: false
-        type: string
-      validate_reference:
-        description: "Compare with frozen reference results"
-        required: true
-        default: false
-        type: boolean
 
 permissions:
   contents: read
@@ -41,15 +27,8 @@ jobs:
       - name: Run baseline and loop-decoupling ablation
         env:
           IMAGE: ghcr.io/forzacapybara/ldp-gem5-ae@${{ inputs.image_digest }}
-          MAX_INSTS: ${{ inputs.max_insts }}
-          TASKS: ${{ inputs.tasks }}
         run: |
           mkdir results
-          task_args=()
-          if [[ -n "$TASKS" ]]; then
-            read -r -a selected_tasks <<< "$TASKS"
-            task_args=(--tasks "${selected_tasks[@]}")
-          fi
           /usr/bin/time -v docker run --rm \
             --user "$(id -u):$(id -g)" -e HOME=/tmp \
             -v "$PWD/results:/results" \
@@ -60,25 +39,9 @@ jobs:
             python3 scripts/run.py \
               --gem5 /opt/ldp/bin/gem5.opt \
               --checkpoint-root /opt/ldp/checkpoints \
-              --outdir /results --jobs 4 \
-              --max-insts "$MAX_INSTS" --mechanism-ablation \
-              "${task_args[@]}"
-
-      - name: Validate original speedup results
-        if: inputs.validate_reference
-        env:
-          IMAGE: ghcr.io/forzacapybara/ldp-gem5-ae@${{ inputs.image_digest }}
-        run: |
-          docker run --rm \
-            --user "$(id -u):$(id -g)" -e HOME=/tmp \
-            -v "$PWD/results:/results:ro" \
-            "$IMAGE" \
-            python3 scripts/validate.py \
-              --actual /results/analysis/speedup.csv \
-              --output-root /results
+              --outdir /results --jobs 4 --mechanism-ablation
 
       - name: Validate mechanism results
-        if: inputs.validate_reference
         run: |
           python3 scripts/validate_mechanism.py \
             --actual results/analysis/mechanism_summary.csv

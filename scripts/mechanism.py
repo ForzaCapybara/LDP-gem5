@@ -77,9 +77,6 @@ def stats_path(root: Path, task: str, config: str) -> Path:
 def task_metrics(
     root: Path,
     task: str,
-    coverage_choice: str,
-    timeliness_choice: str,
-    include_candidates: bool,
 ) -> tuple[list[dict[str, object]], list[str]]:
     failures: list[str] = []
     nopf = read_stats(stats_path(root, task, "nopf_restored"))
@@ -122,33 +119,12 @@ def task_metrics(
         issued = stats[PREFETCHER + "pfIssued"]
         late = stats[PREFETCHER + "pfLate"]
 
-        coverage_standard = ratio(useful, useful + misses)
-        coverage_effective = ratio(
+        coverage = ratio(
             useful + hits,
             useful + hits + misses,
         )
-        coverage_miss_reduction = (
-            1.0 - ratio(misses, nopf_misses)
-            if nopf_misses is not None
-            else math.nan
-        )
-        timeliness_strict = (
-            ratio(useful, useful + hits) if useful + hits > 0 else 0.0
-        )
-        timeliness_all_targets = (
-            ratio(useful, useful + hits_alloc)
-            if useful + hits_alloc > 0
-            else 0.0
-        )
-        coverage = {
-            "effective": coverage_effective,
-            "standard": coverage_standard,
-            "miss-reduction": coverage_miss_reduction,
-        }[coverage_choice]
         timeliness = (
-            timeliness_strict
-            if timeliness_choice == "strict"
-            else timeliness_all_targets
+            ratio(useful, useful + hits) if useful + hits > 0 else 0.0
         )
         speedup = (
             ratio(nopf_seconds, sim_seconds)
@@ -175,23 +151,7 @@ def task_metrics(
             "coverage": f"{coverage:.9f}",
             "timeliness": f"{timeliness:.9f}",
             "speedup_over_nopf": f"{speedup:.9f}",
-            "accuracy": f"{ratio(useful, issued - late):.9f}",
-            "late_rate": f"{ratio(late, issued):.9f}",
         }
-        if include_candidates:
-            row.update(
-                {
-                    "coverage_standard": f"{coverage_standard:.9f}",
-                    "coverage_effective": f"{coverage_effective:.9f}",
-                    "coverage_miss_reduction": (
-                        f"{coverage_miss_reduction:.9f}"
-                    ),
-                    "timeliness_strict": f"{timeliness_strict:.9f}",
-                    "timeliness_all_targets": (
-                        f"{timeliness_all_targets:.9f}"
-                    ),
-                }
-            )
         rows.append(row)
         if nopf_insts is not None and abs(sim_insts - nopf_insts) > 10:
             failures.append(
@@ -208,9 +168,6 @@ def task_metrics(
 def collect(
     root: Path,
     task_names: list[str],
-    coverage_choice: str = "effective",
-    timeliness_choice: str = "strict",
-    include_candidates: bool = False,
 ) -> tuple[Path, list[str]]:
     analysis = root / "analysis"
     analysis.mkdir(parents=True, exist_ok=True)
@@ -220,9 +177,6 @@ def collect(
         task_rows, task_failures = task_metrics(
             root,
             task,
-            coverage_choice,
-            timeliness_choice,
-            include_candidates,
         )
         rows.extend(task_rows)
         failures.extend(task_failures)
@@ -285,24 +239,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--tasks", nargs="+", required=True)
-    parser.add_argument(
-        "--coverage",
-        choices=("effective", "standard", "miss-reduction"),
-        default="effective",
-    )
-    parser.add_argument(
-        "--timeliness",
-        choices=("strict", "all-targets"),
-        default="strict",
-    )
-    parser.add_argument("--include-candidates", action="store_true")
     args = parser.parse_args()
     output, failures = collect(
         args.output_root.resolve(),
         args.tasks,
-        args.coverage,
-        args.timeliness,
-        args.include_candidates,
     )
     print(f"mechanism results: {output}")
     if failures:

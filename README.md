@@ -74,10 +74,12 @@ docker run --rm \
 ```
 
 It writes `mechanism.csv`, `mechanism_summary.csv`, and `mechanism.svg` under
-`results/analysis`. Coverage is useful prefetches divided by useful
-prefetches plus demand MSHR misses. Timeliness is useful prefetches divided by
-useful prefetches plus demands that reach an outstanding prefetch MSHR; a
-zero denominator is reported as zero. See `ARTIFACT.md` for interpretation.
+`results/analysis`. Coverage counts both completed useful prefetches and
+demands that reach an outstanding prefetch MSHR as covered accesses.
+Timeliness is the completed useful fraction of those covered accesses. The
+graph and hash-join tasks use 10-million-instruction windows; GB runs to normal
+completion because its loop-decoupling effect occurs later. See `ARTIFACT.md`
+for the exact formulas and interpretation.
 
 The permanent archival DOI is reserved and will become publicly accessible
 by the end of the artifact evaluation process.
