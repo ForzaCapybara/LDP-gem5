@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this artifact, please cite the MICRO 2026 paper and the archived artifact."
 title: "LDP-gem5: MICRO 2026 Artifact for the Loop-Decoupled Prefetcher"
 type: software
-version: "micro26-ae-v1"
+version: "micro26-ae-v2"
 date-released: "2026-07-23"
 authors:
   - name: "capybara"

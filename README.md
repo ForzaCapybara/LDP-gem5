@@ -34,7 +34,7 @@ mkdir -p results
 docker run --rm \
   --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -v "$PWD/results:/results" \
-  ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be \
+  ghcr.io/forzacapybara/ldp-gem5-ae@sha256:86ad936a3d13d99b1e0c85df895c450a2ffa8746c72ee59610da1259b56aaf49 \
   python3 scripts/run.py \
     --gem5 /opt/ldp/bin/gem5.opt \
     --checkpoint-root /opt/ldp/checkpoints \
@@ -47,7 +47,7 @@ Validate the reproduced results:
 docker run --rm \
   --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -v "$PWD/results:/results" \
-  ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be \
+  ghcr.io/forzacapybara/ldp-gem5-ae@sha256:86ad936a3d13d99b1e0c85df895c450a2ffa8746c72ee59610da1259b56aaf49 \
   python3 scripts/validate.py --actual /results/analysis/speedup.csv \
     --output-root /results
 ```
@@ -83,7 +83,7 @@ The permanent archival DOI is reserved and will become publicly accessible
 by the end of the artifact evaluation process.
 
 Evaluated image digest:
-`sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be`.
+`sha256:86ad936a3d13d99b1e0c85df895c450a2ffa8746c72ee59610da1259b56aaf49`.
 
 ## Native build
 

@@ -48,10 +48,10 @@ concurrently.
 Pull the evaluated image by its immutable digest:
 
 ```bash
-docker pull ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be
+docker pull ghcr.io/forzacapybara/ldp-gem5-ae@sha256:86ad936a3d13d99b1e0c85df895c450a2ffa8746c72ee59610da1259b56aaf49
 ```
 
-The human-readable release tag is `micro26-ae-v1`.
+The human-readable release tag is `micro26-ae-v2`.
 
 Run a single task as a functional check:
 
@@ -60,7 +60,7 @@ mkdir -p results
 docker run --rm \
   --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -v "$PWD/results:/results" \
-  ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be \
+  ghcr.io/forzacapybara/ldp-gem5-ae@sha256:86ad936a3d13d99b1e0c85df895c450a2ffa8746c72ee59610da1259b56aaf49 \
   python3 scripts/run.py \
     --gem5 /opt/ldp/bin/gem5.opt \
     --checkpoint-root /opt/ldp/checkpoints \
@@ -76,7 +76,7 @@ mkdir results
 docker run --rm \
   --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -v "$PWD/results:/results" \
-  ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be \
+  ghcr.io/forzacapybara/ldp-gem5-ae@sha256:86ad936a3d13d99b1e0c85df895c450a2ffa8746c72ee59610da1259b56aaf49 \
   python3 scripts/run.py \
     --gem5 /opt/ldp/bin/gem5.opt \
     --checkpoint-root /opt/ldp/checkpoints \
@@ -89,7 +89,7 @@ Validate the complete result:
 docker run --rm \
   --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -v "$PWD/results:/results" \
-  ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be \
+  ghcr.io/forzacapybara/ldp-gem5-ae@sha256:86ad936a3d13d99b1e0c85df895c450a2ffa8746c72ee59610da1259b56aaf49 \
   python3 scripts/validate.py \
     --actual /results/analysis/speedup.csv \
     --output-root /results
@@ -190,7 +190,7 @@ python3 scripts/validate_mechanism.py \
   --actual results/analysis/mechanism_summary.csv
 ```
 
-The clean reference run takes about 18 minutes on a four-vCPU GitHub-hosted
+The clean reference run takes about 14 minutes on a four-vCPU GitHub-hosted
 runner. It generates task-level raw counters in `mechanism.csv`,
 application-level values in `mechanism_summary.csv`, and the three-panel
 `mechanism.svg`.
