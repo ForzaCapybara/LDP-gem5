@@ -194,10 +194,10 @@ The graph and hash-join tasks use the same 10-million-instruction windows as
 the compact speedup experiment. The GB effect occurs later in execution, so
 the mechanism workflow runs GB to normal completion (104,754,907 simulated
 instructions, with a 105-million instruction cap) for both variants and the
-no-prefetch baseline. The clean reference run takes about 35 minutes on a
-four-vCPU GitHub-hosted runner. It generates task-level raw counters in `mechanism.csv`,
-application-level values in `mechanism_summary.csv`, and the three-panel
-`mechanism.svg`.
+no-prefetch baseline. The clean reference run takes about 45 minutes on a
+four-vCPU GitHub-hosted runner. It generates task-level raw counters in
+`mechanism.csv`, application-level values in `mechanism_summary.csv`, and the
+three-panel `mechanism.svg`.
 
 For each configuration, coverage and timeliness are fixed as:
 
