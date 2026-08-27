@@ -32,6 +32,7 @@ checkpoints:
 ```bash
 mkdir -p results
 docker run --rm \
+  --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -v "$PWD/results:/results" \
   ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be \
   python3 scripts/run.py \
@@ -44,11 +45,17 @@ Validate the reproduced results:
 
 ```bash
 docker run --rm \
+  --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -v "$PWD/results:/results" \
   ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be \
   python3 scripts/validate.py --actual /results/analysis/speedup.csv \
     --output-root /results
 ```
+
+The runtime UID/GID mapping makes files in the bind-mounted directory owned
+by the invoking host user. If the host does not provide `id` (for example,
+Windows PowerShell), use a Docker Desktop shared directory and make `results`
+writable before launching the container; see `ARTIFACT.md`.
 
 The permanent archival DOI is reserved and will become publicly accessible
 by the end of the artifact evaluation process.

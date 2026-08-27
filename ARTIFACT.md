@@ -58,6 +58,7 @@ Run a single task as a functional check:
 ```bash
 mkdir -p results
 docker run --rm \
+  --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -v "$PWD/results:/results" \
   ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be \
   python3 scripts/run.py \
@@ -73,6 +74,7 @@ Run the complete eight-task subset:
 rm -rf results
 mkdir results
 docker run --rm \
+  --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -v "$PWD/results:/results" \
   ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be \
   python3 scripts/run.py \
@@ -85,6 +87,7 @@ Validate the complete result:
 
 ```bash
 docker run --rm \
+  --user "$(id -u):$(id -g)" -e HOME=/tmp \
   -v "$PWD/results:/results" \
   ghcr.io/forzacapybara/ldp-gem5-ae@sha256:855fc6a48e69c553ef7602b3c7e47c368783a8166ad287b77d9c12509f8f84be \
   python3 scripts/validate.py \
@@ -99,6 +102,11 @@ Success is reported as `VALIDATION PASSED: 8 task(s)`. The validation requires:
    instructions per task (gem5 may cross the limit by a few instructions);
 3. LDP is faster than no-prefetch for every task; and
 4. reproduced speedups are within 5% of the archived reference.
+
+`--user "$(id -u):$(id -g)"` maps the container process to the invoking
+POSIX user, so files created through the bind mount remain writable and
+host-owned. On Windows Docker Desktop, place `results` in a shared local
+directory and grant the current user write access before running the command.
 
 ## 5. Native workflow
 
@@ -173,8 +181,10 @@ reference CSV.
 - `VALIDATION FAILED`: inspect the listed task, paired stats files, and
   per-configuration logs. Do not reuse checkpoints generated with a different
   memory/CPU profile.
-- Docker output permission errors: create the mounted result directory with
-  write permission for the container user.
+- Docker output permission errors: retain the documented `--user` and
+  `HOME=/tmp` options and verify that the host directory is writable. As a
+  POSIX fallback, run `chmod a+rwx results`; on Docker Desktop, use a shared
+  local directory rather than a restricted or network-mounted path.
 
 Report evaluation problems through the GitHub issue tracker and include the
 image digest, host OS, command, and failing task log.

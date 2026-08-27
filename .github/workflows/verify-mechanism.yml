@@ -1,10 +1,10 @@
-name: Verify AE container
+name: Verify loop-decoupling ablation
 
 on:
   workflow_dispatch:
     inputs:
       image_digest:
-        description: "Anonymized GHCR image digest (sha256:...)"
+        description: "GHCR image digest (sha256:...)"
         required: true
         type: string
 
@@ -13,23 +13,18 @@ permissions:
   packages: read
 
 jobs:
-  reproduce:
+  mechanism:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
-      - name: Record host resources
-        run: |
-          lscpu
-          free -h
-          df -h .
+      - uses: actions/checkout@v4
 
       - name: Pull immutable image
         env:
           IMAGE: ghcr.io/forzacapybara/ldp-gem5-ae@${{ inputs.image_digest }}
-        run: |
-          docker pull "$IMAGE"
+        run: docker pull "$IMAGE"
 
-      - name: Reproduce eight tasks
+      - name: Run baseline and loop-decoupling ablation
         env:
           IMAGE: ghcr.io/forzacapybara/ldp-gem5-ae@${{ inputs.image_digest }}
         run: |
@@ -37,13 +32,15 @@ jobs:
           /usr/bin/time -v docker run --rm \
             --user "$(id -u):$(id -g)" -e HOME=/tmp \
             -v "$PWD/results:/results" \
+            -v "$PWD/scripts/run.py:/opt/ldp/scripts/run.py:ro" \
+            -v "$PWD/scripts/mechanism.py:/opt/ldp/scripts/mechanism.py:ro" \
             "$IMAGE" \
             python3 scripts/run.py \
               --gem5 /opt/ldp/bin/gem5.opt \
               --checkpoint-root /opt/ldp/checkpoints \
-              --outdir /results --jobs 4
+              --outdir /results --jobs 4 --mechanism-ablation
 
-      - name: Validate results
+      - name: Validate original speedup results
         env:
           IMAGE: ghcr.io/forzacapybara/ldp-gem5-ae@${{ inputs.image_digest }}
         run: |
@@ -58,6 +55,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: clean-container-results
+          name: mechanism-results
           path: results
           retention-days: 30

@@ -13,6 +13,8 @@ import time
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 from pathlib import Path
 
+from mechanism import collect as collect_mechanism
+
 
 ROOT = Path(__file__).resolve().parents[1]
 CPU_TYPE = "O3_ARM_Neoverse_v2"
@@ -49,6 +51,13 @@ DEFAULT_TASKS = ROOT / "tasks" / "tasks.conf"
 DEFAULT_GEM5 = ROOT / "build" / "ARM_LDP" / "gem5.opt"
 DEFAULT_OUTDIR = ROOT / "m5out"
 CONFIG = ROOT / "configs" / "ldp" / "se.py"
+LDP_CONFIG_ARGS = {
+    "ldp_restored": [],
+    "ldp_no_loop_restored": [
+        "--ldp-link-detection-enable",
+        "false",
+    ],
+}
 
 
 def load_tasks(path: Path) -> dict[str, list[str]]:
@@ -132,13 +141,14 @@ def run_one(
     gem5_cmd += profile["cache_args"]
     if config_name != "base":
         gem5_cmd += ["--maxinsts", str(max_insts)]
-    if config_name == "ldp_restored":
+    if config_name in LDP_CONFIG_ARGS:
         gem5_cmd += [
             "--l1d-hwp-type",
             "LDPPrefetcher",
             "--ldp-notify",
             "l1",
         ]
+        gem5_cmd += LDP_CONFIG_ARGS[config_name]
     if config_name == "base":
         gem5_cmd += [
             "--checkpoint-dir",
@@ -324,6 +334,11 @@ def main() -> int:
     )
     parser.add_argument("--skip-existing", action="store_true")
     parser.add_argument("--collect-only", action="store_true")
+    parser.add_argument(
+        "--mechanism-ablation",
+        action="store_true",
+        help="Also run LDP with loop decoupling disabled and collect mechanism metrics",
+    )
     args = parser.parse_args()
 
     task_map = load_tasks(args.task_file.resolve())
@@ -332,6 +347,17 @@ def main() -> int:
     if unknown:
         parser.error(f"Unknown tasks: {', '.join(unknown)}")
     output_root = args.outdir.resolve()
+    try:
+        output_root.mkdir(parents=True, exist_ok=True)
+        probe = output_root / f".ldp-write-test-{os.getpid()}"
+        probe.write_text("writable\n", encoding="utf-8")
+        probe.unlink()
+    except OSError as error:
+        parser.error(
+            f"output directory is not writable: {output_root} ({error}). "
+            "For Docker bind mounts, add "
+            '--user "$(id -u):$(id -g)" -e HOME=/tmp.'
+        )
     checkpoint_root = (
         args.checkpoint_root.resolve()
         if args.checkpoint_root
@@ -359,7 +385,10 @@ def main() -> int:
             started = time.monotonic()
 
             def submit_restore(task: str) -> None:
-                for config in ("nopf_restored", "ldp_restored"):
+                configs = ["nopf_restored", "ldp_restored"]
+                if args.mechanism_ablation:
+                    configs.append("ldp_no_loop_restored")
+                for config in configs:
                     future = pool.submit(
                         run_one,
                         task,
@@ -373,9 +402,9 @@ def main() -> int:
                         args.max_insts,
                     )
                     pending[future] = ("restore", task, config)
+                submitted = " + ".join(f"{task}/{config}" for config in configs)
                 print(
-                    f"[RESTORE] submitted {task}/nopf_restored + "
-                    f"{task}/ldp_restored",
+                    f"[RESTORE] submitted {submitted}",
                     flush=True,
                 )
 
@@ -480,6 +509,14 @@ def main() -> int:
                 print(f"[RUN] {failed} stage(s) failed", flush=True)
     result = collect(output_root, selected)
     print(f"speedup results: {result}")
+    mechanism_failures: list[str] = []
+    if args.mechanism_ablation:
+        mechanism_result, mechanism_failures = collect_mechanism(
+            output_root,
+            selected,
+            include_candidates=True,
+        )
+        print(f"mechanism results: {mechanism_result}")
     missing = [
         task
         for task in selected
@@ -495,6 +532,13 @@ def main() -> int:
         )
         return 1
     if not args.collect_only and failed:
+        return 1
+    if mechanism_failures:
+        print(
+            "[ANALYSIS] invalid mechanism results: "
+            + "; ".join(mechanism_failures),
+            flush=True,
+        )
         return 1
     return 0
 
